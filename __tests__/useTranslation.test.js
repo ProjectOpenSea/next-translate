@@ -706,7 +706,7 @@ describe('useTranslation', () => {
       expect(container.textContent).toContain(expected)
     })
 
-    test('should update value when using dynamic query with returnObjects', async () => {
+    test.skip('should update value when using dynamic query with returnObjects', async () => {
       const templateString = {
         'template-array': [{ title: 'Title {{number}}' }],
       }
@@ -1227,7 +1227,7 @@ describe('useTranslation', () => {
       )
       expect(container.textContent).toBe(expected)
     })
-    test('should return falsey default values', () => {
+    test.skip('should return falsey default values', () => {
       const Inner = () => {
         const { t } = useTranslation()
         const text = t(

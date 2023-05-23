@@ -39,24 +39,6 @@ export default function transCore({
     allowEmptyStrings = true,
   } = config
 
-  const interpolateUnknown = (
-    value: unknown,
-    query?: TranslationQuery | null
-  ): typeof value => {
-    if (Array.isArray(value)) {
-      return value.map((val) => interpolateUnknown(val, query))
-    }
-    if (value instanceof Object) {
-      return objectInterpolation({
-        obj: value as Record<string, unknown>,
-        query,
-        config,
-        lang,
-      })
-    }
-    return interpolation({ text: value as string, query, config, lang })
-  }
-
   const t: Translate = (key = '', query, options) => {
     const k = Array.isArray(key) ? key[0] : key
     const { nsSeparator = ':', loggerEnvironment = 'browser' } = config
@@ -115,9 +97,18 @@ export default function transCore({
       return k
     }
 
+    if (value instanceof Object) {
+      return objectInterpolation({
+        obj: value as Record<string, unknown>,
+        query,
+        config,
+        lang,
+      })
+    }
+
     // this can return an empty string if either value was already empty
     // or it contained only an interpolation (e.g. "{{name}}") and the query param was empty
-    return interpolateUnknown(value, query)
+    return interpolation({ text: value as string, query, config, lang })
   }
 
   return t
@@ -133,7 +124,7 @@ function getDicValue(
   options: { returnObjects?: boolean; fallback?: string | string[] } = {
     returnObjects: false,
   }
-): unknown | undefined {
+): string | undefined | object {
   const { keySeparator = '.' } = config || {}
   const keyParts = keySeparator ? key.split(keySeparator) : [key]
 
@@ -219,6 +210,8 @@ function interpolation({
   const regexEnd =
     suffix === '' ? '' : `(?:[\\s,]+([\\w-]*))?\\s*${escapeRegex(suffix)}`
   return Object.keys(query).reduce((all, varKey) => {
+    if (typeof all !== 'string') return all
+
     const regex = new RegExp(
       `${escapeRegex(prefix)}\\s*${varKey}${regexEnd}`,
       'gm'
@@ -246,6 +239,7 @@ function objectInterpolation({
   lang?: string
 }): any {
   if (!query || Object.keys(query).length === 0) return obj
+
   Object.keys(obj).forEach((key) => {
     if (obj[key] instanceof Object)
       objectInterpolation({
